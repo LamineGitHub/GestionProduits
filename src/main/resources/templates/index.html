@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestion de Stock</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .animate-fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        .glass-effect {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 min-h-screen">
+
+<!-- En-tête -->
+<div class="absolute inset-0 bg-[radial-gradient(#e0e7ff_1px,transparent_1px)] [background-size:16px_16px] [mask-image:linear-gradient(to_bottom,white,transparent)] opacity-25"></div>
+
+<div class="container mx-auto px-4 py-10 relative z-10">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-10">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+            Gestion de Produits
+        </h1>
+    </div>
+
+    <!-- Notifications -->
+    <div th:if="${successMessage}"
+         id="success-notification"
+         class="glass-effect border-l-4 border-green-500 p-4 mb-6 rounded-md shadow-md animate-fade-in"
+         role="alert"
+    >
+        <div class="flex items-center">
+            <svg class="h-6 w-6 text-green-500 mr-3"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24"
+            >
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+            </svg>
+            <span th:text="${successMessage}" class="text-green-700"></span>
+        </div>
+    </div>
+
+    <div th:if="${errorMessage}"
+         id="error-notification"
+         class="glass-effect border-l-4 border-red-500 p-4 mb-6 rounded-md shadow-md animate-fade-in"
+         role="alert"
+    >
+        <div class="flex items-center">
+            <svg class="h-6 w-6 text-red-500 mr-3"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24"
+            >
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+            </svg>
+            <span th:text="${errorMessage}" class="text-red-700"></span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Formulaire d'ajout et de modification -->
+        <div class="lg:col-span-1">
+            <div class="glass-effect rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
+                    <h2 class="text-xl font-bold" th:text="${isEdit} ? 'Modifier le produit' : 'Nouveau produit'"></h2>
+                    <p class="text-xs text-indigo-100 mt-1">
+                        Remplissez les informations ci-dessous
+                    </p>
+                </div>
+
+                <form th:action="${isEdit} ? @{/products/{reference}(reference=${product.reference})} : @{/products}"
+                      th:object="${product}" method="post" class="p-5 space-y-4"
+                >
+                    <!-- Référence -->
+                    <div>
+                        <label for="reference" class="block text-sm font-medium text-indigo-700 mb-1 ml-1">
+                            Référence
+                            <span class="text-xs text-gray-500 font-normal">(4-12 caractères)</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">#</span>
+                            </div>
+                            <input type="text" id="reference" th:field="*{reference}" th:readonly="${isEdit}"
+                                   class="block w-full pl-10 pr-3 py-3 border-0 bg-indigo-50 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                                   th:classappend="${#fields.hasErrors('reference')} ? 'border-2 border-red-500 bg-red-50' : ''"
+                            />
+                        </div>
+                        <div th:if="${#fields.hasErrors('reference')}" class="mt-1">
+                            <p th:each="err : ${#fields.errors('reference')}"
+                               class="text-sm text-red-600 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4 mr-1"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor"
+                                >
+                                    <path fill-rule="evenodd"
+                                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                          clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span th:text="${err}"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Désignation -->
+                    <div>
+                        <label for="designation" class="block text-sm font-medium text-indigo-700 mb-1 ml-1">
+                            Désignation
+                            <span class="text-xs text-red-500" th:if="${#fields.hasErrors('designation')}">*</span>
+                        </label>
+                        <input type="text" th:field="*{designation}" id="designation"
+                               class="block w-full px-3 py-3 border-0 bg-indigo-50 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                               th:classappend="${#fields.hasErrors('designation')} ? 'border-2 border-red-500 bg-red-50' : ''"
+                        />
+                        <div th:if="${#fields.hasErrors('designation')}" class="mt-1">
+                            <p th:each="err : ${#fields.errors('designation')}"
+                               class="text-sm text-red-600 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4 mr-1"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor"
+                                >
+                                    <path fill-rule="evenodd"
+                                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                          clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span th:text="${err}"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Prix -->
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-indigo-700 mb-1 ml-1">
+                            Prix
+                            <span class="text-xs text-gray-500 font-normal">(min. 100)</span>
+                            <span class="text-xs text-red-500" th:if="${#fields.hasErrors('price')}">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">F CFA</span>
+                            </div>
+                            <input type="number" step="1" min="100" th:field="*{price}" id="price"
+                                   class="block w-full pl-16 pr-3 py-3 border-0 bg-indigo-50 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                                   th:classappend="${#fields.hasErrors('price')} ? 'border-2 border-red-500 bg-red-50' : ''"
+                            />
+                        </div>
+                        <div th:if="${#fields.hasErrors('price')}" class="mt-1">
+                            <p th:each="err : ${#fields.errors('price')}"
+                               class="text-sm text-red-600 flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4 mr-1"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor"
+                                >
+                                    <path fill-rule="evenodd"
+                                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                          clip-rule="evenodd"
+                                    />
+                                </svg>
+                                <span th:text="${err}"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Quantité -->
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-indigo-700 mb-1 ml-1">
+                            Quantité
+                        </label>
+                        <input type="number" min="0" th:field="*{quantity}" id="quantity"
+                               class="block w-full px-3 py-3 border-0 bg-indigo-50 rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-800"
+                        />
+                    </div>
+
+                    <!-- Boutons -->
+                    <div class="flex gap-3 mt-6">
+                        <a th:if="${isEdit}" href="/products"
+                           class="flex-1 flex justify-center items-center gap-2 py-3 px-4 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition shadow-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                            >
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                            Annuler
+                        </a>
+                        <button type="submit"
+                                class="flex-1 flex justify-center items-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg transition shadow-sm"
+                        >
+                            <svg th:if="${!isEdit}"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                            >
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                            <svg th:if="${isEdit}"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                            >
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                />
+                            </svg>
+                            <span th:text="${isEdit} ? 'Mettre à jour' : 'Ajouter le produit'"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des produits -->
+        <div class="glass-effect rounded-2xl shadow-xl overflow-hidden lg:col-span-2">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+
+                    <h2 class="text-xl font-bold text-white">Liste des produits</h2>
+
+                    <!-- Barre de recherche -->
+                    <form th:action="@{/products}" method="get" class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <input type="text" name="keyword" th:value="${keyword}"
+                               placeholder="Rechercher un produit..."
+                               class="pl-10 pr-12 py-2 w-full md:w-64 rounded-full bg-white/20 focus:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/50 text-white focus:text-gray-800 placeholder-white/70 focus:placeholder-gray-500"
+                        />
+                        <button type="submit" class="absolute inset-y-0 right-0 px-3 text-gray-400 pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                            >
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                    <tr class="text-left bg-indigo-50/50">
+                        <th class="px-6 py-4 text-sm font-medium text-indigo-800">
+                            Référence
+                        </th>
+                        <th class="px-6 py-4 text-sm font-medium text-indigo-800">
+                            Désignation
+                        </th>
+                        <th class="px-6 py-4 text-sm font-medium text-indigo-800">
+                            Prix
+                        </th>
+                        <th class="px-6 py-4 text-sm font-medium text-indigo-800">
+                            Stock
+                        </th>
+                        <th class="px-6 py-4 text-sm font-medium text-indigo-800">
+                            Actions
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody class="bg-white/40 divide-y divide-indigo-100">
+                    <tr th:each="prod : ${products}" class="hover:bg-indigo-50/80 transition duration-150 ease-in-out">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800"
+                            th:text="${prod.reference}"
+                        >
+                            REF-001
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700"
+                            th:text="${prod.designation}"
+                        >
+                            Ordinateur portable
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                <span th:text="${#numbers.formatDecimal(prod.price, 0, 'COMMA', 0, 'POINT') + ' F CFA'}"
+                                      class="font-medium"
+                                >
+                                    150,000 F CFA
+                                </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                  <span th:text="${prod.quantity}">25</span>
+                                </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex gap-2">
+                                <a th:href="@{/products/{reference}/edit(reference=${prod.reference})}"
+                                   class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded bg-indigo-100 hover:bg-indigo-200 text-indigo-700 transition"
+                                >
+                                    <svg class="w-4 h-4 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24"
+                                    >
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                        />
+                                    </svg>
+                                    Modifier
+                                </a>
+                                <a th:href="@{/products/{reference}/delete(reference=${prod.reference})}"
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')"
+                                   class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded bg-red-100 hover:bg-red-200 text-red-700 transition"
+                                >
+                                    <svg class="w-4 h-4 mr-1"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24"
+                                    >
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              stroke-width="2"
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                    </svg>
+                                    Supprimer
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${products.empty}">
+                        <td colspan="5" class="px-6 py-10 text-center text-gray-500 italic">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-400 mb-3"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          stroke-width="2"
+                                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                <p class="text-lg">Aucun produit trouvé</p>
+                                <p class="text-sm text-gray-400">
+                                    Ajoutez votre premier produit en utilisant le formulaire
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // Faire disparaître automatiquement les notifications après 5 secondes
+  document.addEventListener("DOMContentLoaded", () => {
+    const successNotification = document.getElementById(
+      "success-notification"
+    )
+    const errorNotification = document.getElementById("error-notification")
+
+    const notificationTimeout = 5000
+
+    const dismissNotification = (element) => {
+      if (!element) return
+
+      element.classList.add("animate-fade-out")
+
+      element.addEventListener("animationend", function () {
+        element.style.display = "none"
+      })
+    }
+
+    if (successNotification) {
+      setTimeout(() => dismissNotification(successNotification), notificationTimeout)
+    }
+
+    if (errorNotification) {
+      setTimeout(() => dismissNotification(errorNotification), notificationTimeout)
+    }
+  })
+</script>
+</body>
+</html>
