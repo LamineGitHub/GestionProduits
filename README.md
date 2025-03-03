@@ -2,7 +2,7 @@
 
 ## Présentation de l'application
 
-L'application **Gestion de Produits** est une solution web développée avec Spring Boot permettant de gérer facilement un inventaire de produits. Cette application offre une interface utilisateur ajouter, modifier, rechercher et supprimer des produits dans votre base de données PostgreSQL ou un hashMap (pour des données temporaires).
+L'application **Gestion de Produits** est une solution web développée avec Spring Boot qui permet de gérer facilement un inventaire de produits. Elle offre une interface utilisateur pour ajouter, modifier, rechercher et supprimer des produits dans votre base de données PostgreSQL ou un hashMap (pour les données temporaires).
 
 ## Fonctionnalités principales
 
@@ -51,5 +51,5 @@ Pour garantir l'intégrité des données, l'application impose certaines règles
 Cette application est développée avec :
 
 - **Backend** : Spring Boot (Java)
-- **Frontend** : Thymeleaf et Tailwind CSS (via leur cdn)
+- **Frontend** : Thymeleaf et Tailwind CSS (via le cdn)
 - **Base de données** : PostgreSQL ou HashMap
